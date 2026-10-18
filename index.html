@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minha Galeria</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+    <!-- Tela de Login -->
+    <div id="login-screen" class="screen">
+        <div class="login-card">
+            <h1>📸 Minha Galeria</h1>
+            <p>Fotos do OneDrive em um mapa do Brasil</p>
+            <button id="btn-login" class="btn-primary">Entrar com Microsoft</button>
+        </div>
+    </div>
+
+    <!-- Tela Principal -->
+    <div id="main-screen" class="screen hidden">
+        <header>
+            <h1>📸 Minha Galeria</h1>
+            <div id="user-info"></div>
+            <button id="btn-logout" class="btn-secondary">Sair</button>
+        </header>
+
+        <main>
+            <!-- Mapa -->
+            <div id="map-container">
+                <div id="map"></div>
+            </div>
+
+            <!-- Galeria de fotos -->
+            <div id="gallery-container">
+                <div id="gallery-header">
+                    <h2 id="gallery-title">Selecione uma localização no mapa</h2>
+                    <span id="photo-count"></span>
+                </div>
+                <div id="gallery-grid"></div>
+            </div>
+
+            <!-- Lightbox -->
+            <div id="lightbox" class="hidden">
+                <button id="lightbox-close">&times;</button>
+                <img id="lightbox-img" src="" alt="">
+                <div id="lightbox-info"></div>
+            </div>
+        </main>
+
+        <!-- Loading -->
+        <div id="loading" class="hidden">
+            <div class="spinner"></div>
+            <p>Carregando fotos...</p>
+        </div>
+    </div>
+
+    <!-- MSAL.js -->
+    <script src="https://alcdn.msauth.net/browser/2.37.0/js/msal-browser.min.js"></script>
+    <!-- Leaflet -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- App -->
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/graph.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
