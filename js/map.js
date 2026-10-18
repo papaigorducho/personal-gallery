@@ -1,5 +1,5 @@
 // Mapa Leaflet do Brasil
-const Map = {
+const BrasilMap = {
     map: null,
     markers: {},
     photosByLocation: {},

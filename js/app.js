@@ -45,7 +45,7 @@ const App = {
             document.getElementById("user-info").textContent = user.displayName || user.userPrincipalName;
 
             // Inicializar mapa
-            Map.init((location) => this.onLocationSelect(location));
+            BrasilMap.init((location) => this.onLocationSelect(location));
 
             // Buscar fotos
             await this.loadPhotos();
@@ -66,7 +66,7 @@ const App = {
         this.photosByLocation = this.groupPhotosByFolder();
 
         // Configurar mapa
-        Map.setPhotosByLocation(this.photosByLocation);
+        BrasilMap.setPhotosByLocation(this.photosByLocation);
 
         // Atualizar título
         document.getElementById("gallery-title").textContent = "Selecione uma localização no mapa";
@@ -119,7 +119,7 @@ const App = {
 
     onLocationSelect(locationName) {
         this.currentLocation = locationName;
-        Map.highlightLocation(locationName);
+        BrasilMap.highlightLocation(locationName);
 
         const photos = this.photosByLocation[locationName] || [];
         document.getElementById("gallery-title").textContent = locationName;
