@@ -36,8 +36,8 @@ const Graph = {
         const token = await Auth.getAccessToken();
         let photos = [];
 
-        // Usar search do Graph (busca recursiva em uma chamada só)
-        let url = `${this.baseUrl}/me/drive/root/search(q='')?$select=id,name,lastModifiedDateTime,size,file,folder,parentReference`;
+        // Buscar imagens recursivamente
+        let url = `${this.baseUrl}/me/drive/root/search(q='')`;
 
         let pageCount = 0;
         while (url && pageCount < 20) {
