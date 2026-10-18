@@ -77,8 +77,7 @@ const App = {
         const groups = {};
 
         this.photos.forEach(photo => {
-            // Usar o nome da pasta como localização
-            const folderName = this.extractLocationFromPath(photo.parentReference?.path);
+            const folderName = this.extractLocationFromPath(photo._folderPath);
 
             if (!groups[folderName]) {
                 groups[folderName] = [];
@@ -86,35 +85,65 @@ const App = {
             groups[folderName].push(photo);
         });
 
+        console.log("Fotos agrupadas:", Object.fromEntries(
+            Object.entries(groups).map(([k, v]) => [k, v.length])
+        ));
+
         return groups;
     },
 
-    extractLocationFromPath(path) {
-        if (!path) return "Geral";
+    extractLocationFromPath(folderPath) {
+        if (!folderPath) return "Geral";
 
-        // Extrair nome da pasta do path (ex: /drives/b!xxx/root/Pictures/SP → SP)
-        const parts = path.split("/").filter(p => p);
-        if (parts.length <= 2) return "Geral";
-
-        // Pegar o último segmento que não seja "root" ou o drive ID
+        // Usar o último segmento da pasta (ex: "Fotos/SP" → "SP")
+        const parts = folderPath.split("/").filter(p => p);
         const lastPart = parts[parts.length - 1];
+        if (!lastPart) return "Geral";
 
-        // Mapear nomes comuns de pastas para estados
+        // Mapear nomes de pastas para estados
         const locationMap = {
-            "sp": "São Paulo", "rj": "Rio de Janeiro", "mg": "Minas Gerais",
-            "ba": "Bahia", "rs": "Rio Grande do Sul", "pr": "Paraná",
-            "ce": "Ceará", "pe": "Pernambuco", "sc": "Santa Catarina",
-            "go": "Goiás", "ma": "Maranhão", "pa": "Pará",
-            "es": "Espírito Santo", "pi": "Piauí", "al": "Alagoas",
-            "se": "Sergipe", "pb": "Paraíba", "rn": "Rio Grande do Norte",
-            "mt": "Mato Grosso", "ms": "Mato Grosso do Sul", "df": "Distrito Federal",
-            "am": "Amazonas", "ro": "Rondônia", "ac": "Acre",
-            "rr": "Roraima", "ap": "Amapá", "to": "Tocantins",
-            "pictures": "Geral", "camera roll": "Geral", "screenshots": "Geral"
+            "sp": "São Paulo", "sao paulo": "São Paulo", "são paulo": "São Paulo",
+            "rj": "Rio de Janeiro", "rio de janeiro": "Rio de Janeiro",
+            "mg": "Minas Gerais", "minas gerais": "Minas Gerais",
+            "ba": "Bahia", "bahia": "Bahia",
+            "rs": "Rio Grande do Sul", "rio grande do sul": "Rio Grande do Sul",
+            "pr": "Paraná", "parana": "Paraná", "paraná": "Paraná",
+            "ce": "Ceará", "ceara": "Ceará", "ceará": "Ceará",
+            "pe": "Pernambuco", "pernambuco": "Pernambuco",
+            "sc": "Santa Catarina", "santa catarina": "Santa Catarina",
+            "go": "Goiás", "goias": "Goiás", "goiás": "Goiás",
+            "ma": "Maranhão", "maranhao": "Maranhão", "maranhão": "Maranhão",
+            "pa": "Pará", "para": "Pará", "pará": "Pará",
+            "es": "Espírito Santo", "espirito santo": "Espírito Santo", "espírito santo": "Espírito Santo",
+            "pi": "Piauí", "piaui": "Piauí", "piauí": "Piauí",
+            "al": "Alagoas", "alagoas": "Alagoas",
+            "se": "Sergipe", "sergipe": "Sergipe",
+            "pb": "Paraíba", "paraiba": "Paraíba", "paraíba": "Paraíba",
+            "rn": "Rio Grande do Norte", "rio grande do norte": "Rio Grande do Norte",
+            "mt": "Mato Grosso", "mato grosso": "Mato Grosso",
+            "ms": "Mato Grosso do Sul", "mato grosso do sul": "Mato Grosso do Sul",
+            "df": "Distrito Federal", "distrito federal": "Distrito Federal", "brasilia": "Distrito Federal", "brasília": "Distrito Federal",
+            "am": "Amazonas", "amazonas": "Amazonas",
+            "ro": "Rondônia", "rondonia": "Rondônia", "rondônia": "Rondônia",
+            "ac": "Acre", "acre": "Acre",
+            "rr": "Roraima", "roraima": "Roraima",
+            "ap": "Amapá", "amapa": "Amapá", "amapá": "Amapá",
+            "to": "Tocantins", "tocantins": "Tocantins",
+            "pictures": "Geral", "camera roll": "Geral", "screenshots": "Geral",
+            "fotos": "Geral", "photos": "Geral", "imagens": "Geral"
         };
 
         const lower = lastPart.toLowerCase();
-        return locationMap[lower] || lastPart;
+
+        // Verificar match exato ou parcial
+        if (locationMap[lower]) return locationMap[lower];
+
+        // Verificar se contém o nome de um estado
+        for (const [key, value] of Object.entries(locationMap)) {
+            if (lower.includes(key) && value !== "Geral") return value;
+        }
+
+        return lastPart;
     },
 
     onLocationSelect(locationName) {

@@ -13,80 +13,66 @@ const Graph = {
     async getPhotos() {
         const token = await Auth.getAccessToken();
         let photos = [];
-        let url = CONFIG.photoFolder
-            ? `${this.baseUrl}/me/drive/root:/${CONFIG.photoFolder}:/children`
-            : `${this.baseUrl}/me/drive/root/children`;
 
-        // Buscar apenas arquivos de imagem
-        url += "?select=id,name,webUrl,lastModifiedDateTime,size,file,folder,parentReference";
+        // Buscar recursivamente todas as pastas
+        const foldersToVisit = [{ id: "root", path: "" }];
 
-        while (url) {
-            const response = await fetch(url, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+        while (foldersToVisit.length > 0) {
+            const folder = foldersToVisit.shift();
+            let url = folder.id === "root"
+                ? `${this.baseUrl}/me/drive/root/children?select=id,name,lastModifiedDateTime,size,file,folder,parentReference`
+                : `${this.baseUrl}/me/drive/items/${folder.id}/children?select=id,name,lastModifiedDateTime,size,file,folder,parentReference`;
 
-            if (!response.ok) {
-                console.error("Erro ao buscar fotos:", response.status);
-                break;
+            while (url) {
+                const response = await fetch(url, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    console.error("Erro ao buscar fotos:", response.status);
+                    break;
+                }
+
+                const data = await response.json();
+
+                for (const item of (data.value || [])) {
+                    if (item.folder) {
+                        // É uma pasta → adicionar à fila
+                        foldersToVisit.push({
+                            id: item.id,
+                            path: folder.path ? `${folder.path}/${item.name}` : item.name
+                        });
+                    } else if (item.file && (item.file.mimeType || "").startsWith("image/")) {
+                        // É uma imagem → adicionar folderPath
+                        item._folderPath = folder.path;
+                        photos.push(item);
+                    }
+                }
+
+                url = data["@odata.nextLink"] || null;
             }
-
-            const data = await response.json();
-
-            // Filtrar apenas imagens
-            const imageItems = (data.value || []).filter(item => {
-                if (item.folder) return false;
-                if (!item.file) return false;
-                const mime = item.file.mimeType || "";
-                return mime.startsWith("image/");
-            });
-
-            photos = photos.concat(imageItems);
-            url = data["@odata.nextLink"] || null;
         }
 
-        return photos;
-    },
-
-    async getPhotosFromFolder(folderId) {
-        const token = await Auth.getAccessToken();
-        let photos = [];
-        let url = `${this.baseUrl}/me/drive/items/${folderId}/children?select=id,name,webUrl,lastModifiedDateTime,size,file`;
-
-        while (url) {
-            const response = await fetch(url, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-
-            if (!response.ok) break;
-
-            const data = await response.json();
-
-            const imageItems = (data.value || []).filter(item => {
-                if (item.folder) return false;
-                if (!item.file) return false;
-                const mime = item.file.mimeType || "";
-                return mime.startsWith("image/");
-            });
-
-            photos = photos.concat(imageItems);
-            url = data["@odata.nextLink"] || null;
-        }
-
+        console.log(`Total de fotos encontradas: ${photos.length}`);
         return photos;
     },
 
     async getPhotoThumbnail(photoId, size = "medium480x480") {
         const token = await Auth.getAccessToken();
-        const response = await fetch(
-            `${this.baseUrl}/me/drive/items/${photoId}/thumbnails?select=${size}`,
-            { headers: { Authorization: `Bearer ${token}` } }
-        );
+        try {
+            const response = await fetch(
+                `${this.baseUrl}/me/drive/items/${photoId}/thumbnails?select=${size}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
 
-        if (!response.ok) return null;
+            if (!response.ok) return null;
 
-        const data = await response.json();
-        if (data.value && data.value.length > 0) {
-            return data.value[0][size]?.url || null;
+            const data = await response.json();
+            if (data.value && data.value.length > 0) {
+                return data.value[0][size]?.url || null;
+            }
+        } catch (e) {
+            console.error("Erro ao buscar thumbnail:", e);
         }
         return null;
     },
@@ -105,26 +91,5 @@ const Graph = {
 
         const blob = await response.blob();
         return URL.createObjectURL(blob);
-    },
-
-    async getFolders() {
-        const token = await Auth.getAccessToken();
-        let folders = [];
-        let url = `${this.baseUrl}/me/drive/root/children?select=id,name,folder`;
-
-        while (url) {
-            const response = await fetch(url, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-
-            if (!response.ok) break;
-
-            const data = await response.json();
-            const folderItems = (data.value || []).filter(item => item.folder);
-            folders = folders.concat(folderItems);
-            url = data["@odata.nextLink"] || null;
-        }
-
-        return folders;
     }
 };
