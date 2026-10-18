@@ -32,6 +32,10 @@ const App = {
     },
 
     async onLoginSuccess() {
+        // Evitar execução dupla
+        if (this._loading) return;
+        this._loading = true;
+
         // Esconder login, mostrar main
         document.getElementById("login-screen").classList.add("hidden");
         document.getElementById("main-screen").classList.remove("hidden");
@@ -44,8 +48,10 @@ const App = {
             const user = await Graph.getUser();
             document.getElementById("user-info").textContent = user.displayName || user.userPrincipalName;
 
-            // Inicializar mapa
-            BrasilMap.init((location) => this.onLocationSelect(location));
+            // Inicializar mapa (apenas uma vez)
+            if (!BrasilMap.map) {
+                BrasilMap.init((location) => this.onLocationSelect(location));
+            }
 
             // Buscar fotos
             await this.loadPhotos();
@@ -55,6 +61,7 @@ const App = {
             alert("Erro ao carregar fotos. Verifique suas permissões no Azure AD.");
         } finally {
             this.showLoading(false);
+            this._loading = false;
         }
     },
 
