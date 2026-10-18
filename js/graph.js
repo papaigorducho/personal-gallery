@@ -35,30 +35,42 @@ const Graph = {
     async getPhotos() {
         const token = await Auth.getAccessToken();
         let photos = [];
+        const seen = new Set();
 
-        // Buscar imagens recursivamente
-        let url = `${this.baseUrl}/me/drive/root/search(q='')`;
+        // Buscar por extensões de imagem (search não aceita query vazia)
+        const queries = [".jpg", ".jpeg", ".png", ".gif", ".heic", ".webp", ".bmp"];
 
-        let pageCount = 0;
-        while (url && pageCount < 20) {
-            pageCount++;
-            const response = await this.fetchWithRetry(url, token);
+        for (const q of queries) {
+            let url = `${this.baseUrl}/me/drive/root/search(q='${q}')`;
+            let pageCount = 0;
 
-            if (!response.ok) {
-                console.error("Erro ao buscar fotos:", response.status);
-                break;
-            }
+            while (url && pageCount < 10) {
+                pageCount++;
+                try {
+                    const response = await this.fetchWithRetry(url, token);
+                    if (!response.ok) {
+                        console.warn(`Erro na busca "${q}":`, response.status);
+                        break;
+                    }
 
-            const data = await response.json();
+                    const data = await response.json();
 
-            for (const item of (data.value || [])) {
-                if (item.file && (item.file.mimeType || "").startsWith("image/")) {
-                    photos.push(item);
+                    for (const item of (data.value || [])) {
+                        if (item.file && (item.file.mimeType || "").startsWith("image/") && !seen.has(item.id)) {
+                            seen.add(item.id);
+                            photos.push(item);
+                        }
+                    }
+
+                    url = data["@odata.nextLink"] || null;
+                    if (url) await this.delay(300);
+                } catch (e) {
+                    console.warn(`Falha na busca "${q}":`, e);
+                    break;
                 }
             }
 
-            url = data["@odata.nextLink"] || null;
-            if (url) await this.delay(200);
+            await this.delay(300);
         }
 
         console.log(`Total de fotos encontradas: ${photos.length}`);
