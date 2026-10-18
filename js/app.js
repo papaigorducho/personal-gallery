@@ -84,7 +84,9 @@ const App = {
         const groups = {};
 
         this.photos.forEach(photo => {
-            const folderName = this.extractLocationFromPath(photo._folderPath);
+            // Usar _folderPath (busca recursiva) ou parentReference.path (search)
+            const folderPath = photo._folderPath || this.getPathFromParentRef(photo.parentReference?.path);
+            const folderName = this.extractLocationFromPath(folderPath);
 
             if (!groups[folderName]) {
                 groups[folderName] = [];
@@ -97,6 +99,18 @@ const App = {
         ));
 
         return groups;
+    },
+
+    getPathFromParentRef(path) {
+        if (!path) return "";
+        // Path formato: /drives/b!xxx/root/Pictures/SP
+        const parts = path.split("/").filter(p => p);
+        // Remover "drives", driveId, "root"
+        const idx = parts.indexOf("root");
+        if (idx >= 0) {
+            return parts.slice(idx + 1).join("/");
+        }
+        return "";
     },
 
     extractLocationFromPath(folderPath) {
